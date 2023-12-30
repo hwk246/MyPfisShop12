@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Express shop</title>
+    <script>
+      const SHOP_SERVICE = ""; //http://localhost:8088";
+
+      async function getURL(url, options) {
+        if (typeof options === "undefined") options = {};
+        let response = await fetch(SHOP_SERVICE + url, options);
+        return response;
+      }
+      async function getJSON(url, options) {
+        let response = await getURL(SHOP_SERVICE + url, options);
+        return response.json();
+      }
+
+      async function getKlanten() {
+        let klanten = await getJSON("/klanten");
+        fillSelectKlanten(klanten, "klanten");
+      }
+
+      async function getproducten() {
+        let producten = await getJSON("/producten");
+        fillSelectProducten(producten, "producten");
+      }
+
+      function initall() {
+        getKlanten();
+        getproducten();
+        showWinkelwagen();
+      }
+
+      function fillSelectKlanten(rij, id) {
+        let options = "";
+        for (i = 0; i < rij.length; i++) {
+          options += `<option value="${rij[i].id}">${rij[i].naam}</option>`;
+        }
+        document.getElementById(id).innerHTML = options;
+      }
+      function fillSelectProducten(rij, id) {
+        let options = "";
+        for (i = 0; i < rij.length; i++)
+          options += `<option value="${rij[i].id}">${rij[i].omschrijving}</option>`;
+        document.getElementById(id).innerHTML = options;
+      }
+
+      function getDropDownValue(id) {
+        var e = document.getElementById(id);
+        return e.options[e.selectedIndex].value;
+      }
+
+      async function runForm() {
+        let product = getDropDownValue("producten");
+        let klant = getDropDownValue("klanten");
+        let aantal = getDropDownValue("aantal");
+        let url = `/add2cart/klant/${klant}/product/${product}/aantal/${aantal}`;
+        let txt = await getJSON(url, { method: "POST" });
+        showWinkelwagen();
+      }
+
+      async function showWinkelwagen() {
+        let klant = getDropDownValue("klanten");
+        let url = "/cart?klant=" + klant;
+        let result = await getJSON(url);
+        let s =
+          "<table><tr><th colspan='3'>Winkelwagen voor klant nr " +
+          klant +
+          "</th></tr>" +
+          "<tr><td>omschrijving</td><td>aantal</td><td>prijs</td></tr>";
+        let totaal = 0;
+        for (let i in result) {
+          const tot = Number(result[i].aantal) * Number(result[i].prijs);
+          totaal += tot;
+          s += `<tr><td>${result[i].omschrijving}</td><td>${
+            result[i].aantal
+          }</td>
+                    <td>${parseFloat(tot).toFixed(2)}</td></tr>`;
+        }
+        s += `</table>`;
+        if (totaal > 0) s += `Totaal is ${parseFloat(totaal).toFixed(2)}`;
+        else s += "bevat geen producten.";
+        document.getElementById("winkelwagen").innerHTML = s;
+      }
+
+      async function leegWinkelWagens() {
+        let result = await fetch("initcart", { method: "DELETE" });
+        showWinkelwagen();
+      }
+    </script>
+  </head>
+  <body onload="initall();">
+    <h1>testlab</h1>
+
+    <form action="javascript:runForm();">
+      Kies product
+      <select id="producten"></select>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Kies Klant
+      <select id="klanten" onChange="showWinkelwagen();"></select>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Kies aantal
+      <select id="aantal">
+        <option value="-1">-1</option>
+        <option value="-2">-2</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+      </select>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <input type="submit" value="Koop" />
+    </form>
+    <p><button onclick="showWinkelwagen();">Toon winkelwagen</button></p>
+    <p><button onclick="leegWinkelWagens();">Leeg alle winkelwagens</button></p>
+
+    <div id="result"></div>
+    Winkelwagen inhoud:
+    <div id="winkelwagen"></div>
+  </body>
+</html>
