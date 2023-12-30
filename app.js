@@ -12,7 +12,7 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   waitForConnections: true,
   queueLimit: 0,
-  port: 3303,
+  port: process.env.DBPORT,
   host: process.env.HOST,
   user: process.env.USER,
   password: process.env.PASSWORD,
@@ -81,7 +81,7 @@ sqlsvc.post(
 
 //hulpfunction om alle winkelwagens leeg te maken
 sqlsvc.delete("/initcart", async function (req, res) {
-  let query = `DEletE FROM cart`;
+  let query = `DELETE FROM cart`;
   try {
     let results = await pool.query(query);
     console.log(`Deleted all from cart.`);
@@ -109,20 +109,10 @@ sqlsvc.get("/producten", async function (req, res) {
   let result = await queryJSON(
     "SELECT id, CONCAT(omschrijving, ' a ', FORMAT(prijs, 2)) as omschrijving FROM products;"
   );
-
   res.end(JSON.stringify(result));
 });
 
-sqlsvc.get("/prod", async (req, res) => {
-  const query =
-    "SELECT id, CONCAT(omschrijving, ' a ', FORMAT(prijs, 2)) as omschrijving FROM products;";
-  let results = await pool.query(query);
 
-  console.log(`these are the results ${results[0]}`);
-  const abc = JSON.stringify(results[0]);
-  console.log(abc);
-  res.end("");
-});
 
 //haalt de lijst met klanten op - voor dropdown
 sqlsvc.get("/klanten", async function (req, res) {
@@ -135,22 +125,14 @@ sqlsvc.get("/index", async function (req, res) {
   res.sendFile("indexV2.html", { root: __dirname });
 });
 
-// //start de server
-// const server = sqlsvc.listen(appPort, function () {
-//   let port = server.address().port;
-//   console.log(`Example sqlsvc listening at ${serverTarget}:${port}`);
-// });
-
-// // -----------------
-
-// // global error handling
-// sqlsvc.use((err, req, res, next) => {
-//   console.log(err.stack);
-//   console.log(err.name);
-//   console.log(err.code);
-//   res.status(500).json({ message: "something broke" });
-// });
-
-sqlsvc.listen(appPort, () => {
-  console.log(`server listen port ${appPort}`);
+//start de server
+const server = sqlsvc.listen(appPort, function () {
+  let port = server.address().port;
+  console.log(`Example sqlsvc listening at ${serverTarget}:${port}`);
 });
+
+
+
+
+
+
